@@ -1,12 +1,13 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Send, Loader } from "lucide-react";
 import { toast } from "react-toastify";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 
 function AddCallReport({ callId, closeModal, TwilioNumber }) {
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -32,6 +33,7 @@ function AddCallReport({ callId, closeModal, TwilioNumber }) {
     onSuccess: (data) => {
       toast.success("Call report submitted successfully");
       reset();
+      queryClient.invalidateQueries(["call-history", TwilioNumber]);
       closeModal();
     },
     onError: (error) => {
