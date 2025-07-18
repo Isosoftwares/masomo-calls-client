@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// const BASE_URL = "https://calls-api.tweetyservices.org/api";
-const BASE_URL = "http://192.168.100.54:3000/api";
+const BASE_URL = "https://api.miremacallcenter.com/api";
+// const BASE_URL = "http://192.168.100.90:3000/api";
 
 export default axios.create({
   baseURL: BASE_URL,

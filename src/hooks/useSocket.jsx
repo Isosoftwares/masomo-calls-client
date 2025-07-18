@@ -17,7 +17,7 @@ const useSocket = () => {
 
     if (!token) return;
 
-    const socketInstance = io("http://192.168.100.54:3000", {
+    const socketInstance = io("https://api.miremacallcenter.com", {
       auth: {
         token,
       },
