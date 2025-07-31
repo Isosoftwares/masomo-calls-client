@@ -5,6 +5,17 @@ import { useDebouncedState } from "@mantine/hooks";
 import { DateInput } from "@mantine/dates";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 
+// Call status constants
+const CALL_STATUS = {
+  QUEUED: "queued",
+  RINGING: "ringing",
+  IN_PROGRESS: "in-progress",
+  COMPLETED: "completed",
+  FAILED: "failed",
+  BUSY: "busy",
+  NO_ANSWER: "no-answer",
+};
+
 const CallHistory = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
@@ -87,13 +98,16 @@ const CallHistory = () => {
       value: agent?._id,
     })) || [];
 
-  // Status options
+  // Updated status options to match CALL_STATUS
   const statusOptions = [
     { label: "All Statuses", value: "" },
-    { label: "Completed", value: "completed" },
-    { label: "In Progress", value: "in-progress" },
-    { label: "Failed", value: "failed" },
-    { label: "Missed", value: "missed" },
+    { label: "Completed", value: CALL_STATUS.COMPLETED },
+    { label: "In Progress", value: CALL_STATUS.IN_PROGRESS },
+    { label: "Ringing", value: CALL_STATUS.RINGING },
+    { label: "Queued", value: CALL_STATUS.QUEUED },
+    { label: "Failed", value: CALL_STATUS.FAILED },
+    { label: "Busy", value: CALL_STATUS.BUSY },
+    { label: "Missed Call", value: CALL_STATUS.NO_ANSWER },
   ];
 
   // Clear filters
@@ -123,21 +137,85 @@ const CallHistory = () => {
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
+  // Helper function to format call direction with icons
+  const formatCallDirection = (direction) => {
+    const directionLower = direction?.toLowerCase();
+    
+    if (directionLower === "inbound") {
+      return (
+        <div className="flex items-center">
+          <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+          </svg>
+          <span className="text-sm text-green-800 font-medium">Inbound</span>
+        </div>
+      );
+    } else if (directionLower === "outbound") {
+      return (
+        <div className="flex items-center">
+          <svg className="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+          <span className="text-sm text-blue-800 font-medium">Outbound</span>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="flex items-center">
+        <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className="text-sm text-gray-600">Unknown</span>
+      </div>
+    );
+  };
+
+  // Helper function to get status display text
+  const getStatusDisplayText = (status) => {
+    switch (status?.toLowerCase()) {
+      case CALL_STATUS.COMPLETED:
+        return "Completed";
+      case CALL_STATUS.IN_PROGRESS:
+        return "In Progress";
+      case CALL_STATUS.RINGING:
+        return "Ringing";
+      case CALL_STATUS.QUEUED:
+        return "Queued";
+      case CALL_STATUS.FAILED:
+        return "Failed";
+      case CALL_STATUS.BUSY:
+        return "Busy";
+      case CALL_STATUS.NO_ANSWER:
+        return "Missed Call";
+      default:
+        return status || "Unknown";
+    }
+  };
+
   // Helper function to get status badge color
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "completed":
+      case CALL_STATUS.COMPLETED:
         return "bg-green-100 text-green-800";
-      case "in-progress":
+      case CALL_STATUS.IN_PROGRESS:
         return "bg-blue-100 text-blue-800";
-      case "failed":
-        return "bg-red-100 text-red-800";
-      case "missed":
+      case CALL_STATUS.RINGING:
         return "bg-yellow-100 text-yellow-800";
+      case CALL_STATUS.QUEUED:
+        return "bg-purple-100 text-purple-800";
+      case CALL_STATUS.FAILED:
+        return "bg-red-100 text-red-800";
+      case CALL_STATUS.BUSY:
+        return "bg-orange-100 text-orange-800";
+      case CALL_STATUS.NO_ANSWER:
+        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  console.log(callsData?.data?.data?.calls);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -372,7 +450,10 @@ const CallHistory = () => {
                   #
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Phone Number
+                  Twilio Number
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Caller Number
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Agent
@@ -384,7 +465,7 @@ const CallHistory = () => {
                   Start Time
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Duration
+                  Direction
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Report
@@ -394,7 +475,7 @@ const CallHistory = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loadingCalls || refetchingCalls ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="flex justify-center items-center">
                       <Loader color="blue" size="lg" />
                       <span className="ml-3 text-gray-600 text-lg">
@@ -407,7 +488,7 @@ const CallHistory = () => {
                 </tr>
               ) : isCallsError ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="text-red-500">
                       <svg
                         className="mx-auto h-12 w-12 text-red-400 mb-4"
@@ -441,9 +522,9 @@ const CallHistory = () => {
                 </tr>
               ) : !callsData?.data?.data?.calls ||
                 !Array.isArray(callsData?.data?.data?.calls) ||
-                callsData?.data?.data?.calls < 1 ? (
+                callsData?.data?.data?.calls?.length < 1 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="text-gray-500">
                       <svg
                         className="mx-auto h-12 w-12 text-gray-400 mb-4"
@@ -476,11 +557,29 @@ const CallHistory = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {(activePage - 1) * perPage + index + 1}
                     </td>
+                    {/* Twilio Number Column */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col">
+                        {/* Display Twilio number name if available */}
+                        {call?.phoneNumberId?.name && (
+                          <div className="text-sm font-semibold text-gray-900 mb-1">
+                            {call.phoneNumberId.name}
+                          </div>
+                        )}
+                        {/* Display Twilio phone number */}
+                        <div className="text-sm text-gray-600">
+                          {call?.phoneNumberId?.phoneNumber || 
+                           call?.callDetails?.twilioNumber || 
+                           "N/A"}
+                        </div>
+                      </div>
+                    </td>
+                    {/* Caller Number Column */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-gray-900">
-                        {call?.phoneNumber ||
-                          call?.phoneNumberId?.name ||
-                          "N/A"}
+                        {call?.phoneNumber || 
+                         call?.callDetails?.callerNumber || 
+                         "N/A"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -496,14 +595,14 @@ const CallHistory = () => {
                           call?.status
                         )}`}
                       >
-                        {call?.status || "Unknown"}
+                        {getStatusDisplayText(call?.status)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatDate(call?.callDetails?.startTime)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDuration(call?.callDetails?.duration)}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {formatCallDirection(call?.direction)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       {call?.comment || "No Report"}

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const BASE_URL = "https://api.miremacallcenter.com/api";
-// const BASE_URL = "http://192.168.100.90:3000/api";
+// const BASE_URL = "https://j5rgfbf5-3000.euw.devtunnels.ms/api";
 
 export default axios.create({
   baseURL: BASE_URL,

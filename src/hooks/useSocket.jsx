@@ -23,6 +23,12 @@ const useSocket = () => {
       },
       transports: ["websocket"],
     });
+    // const socketInstance = io("https://j5rgfbf5-3000.euw.devtunnels.ms", {
+    //   auth: {
+    //     token,
+    //   },
+    //   transports: ["websocket"],
+    // });
 
     socketInstance.on("connect", () => {
       setIsConnected(true);
